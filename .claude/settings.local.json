@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(./node_modules/.bin/next build *)",
+      "Bash(./node_modules/.bin/next dev *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(nohup ./node_modules/.bin/next dev)",
+      "Bash(cd \"/Users/codymuir/Desktop/Documents:tradiant-crm\" && cat /tmp/tradiant-dev.log | tail -30)",
+      "Bash(npx tsc *)",
+      "WebFetch(domain:www.gotradiant.com)",
+      "Bash(ls /Users/codymuir/Desktop/Documents:tradiant-crm/app/ && ls /Users/codymuir/Desktop/)",
+      "Bash(cp /Users/codymuir/Desktop/download.png \"/Users/codymuir/Desktop/Documents:tradiant-crm/public/tradiant-logo.png\")",
+      "Bash(nohup npm run dev)",
+      "Bash(npm list *)",
+      "Bash(sudo npm install -g pm2)",
+      "Bash(chmod +x \"/Users/codymuir/Desktop/Documents:tradiant-crm/start-server.sh\")",
+      "Bash(nohup \"/Users/codymuir/Desktop/Documents:tradiant-crm/start-server.sh\")",
+      "Bash(echo \"Started with PID $!\")",
+      "Bash(curl -s -o /dev/null -w \"Server status: %{http_code}\" http://localhost:3000)",
+      "Bash(lsof -i :3000 -sTCP:LISTEN)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/dashboard)"
+    ]
+  }
+}

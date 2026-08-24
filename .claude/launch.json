@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tradiant-crm",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd '/Users/codymuir/Desktop/Documents:tradiant-crm' && ulimit -n 10240 && npm run dev"],
+      "port": 3000
+    }
+  ]
+}
