@@ -12,10 +12,15 @@ const C = {
 }
 
 const STAGES = [
-  { id: 'open',     label: 'Open',        color: C.orange, soft: C.orangeSoft, outline: true  },
-  { id: 'progress', label: 'In Progress', color: C.orange, soft: C.orangeSoft, outline: false },
-  { id: 'won',      label: 'Closed Won',  color: C.green,  soft: C.greenSoft,  outline: false },
-  { id: 'lost',     label: 'Closed Lost', color: C.red,    soft: C.redSoft,    outline: false },
+  { id: 'inventory-followup',  label: 'Inventory Follow-Up', color: C.orange, soft: C.orangeSoft, outline: true,  closed: false },
+  { id: 'inventory-secured',   label: 'Inventory Secured',   color: C.orange, soft: C.orangeSoft, outline: false, closed: false },
+  { id: 'negotiating',         label: 'Negotiating',         color: '#C07A1A', soft: '#FDF3DC',   outline: false, closed: false },
+  { id: 'buyer-secured',       label: 'Buyer Secured',       color: '#2563EB', soft: '#DBEAFE',   outline: false, closed: false },
+  { id: 'po-signed',           label: 'PO Signed',           color: '#7B5EA7', soft: '#EDE9F6',   outline: false, closed: false },
+  { id: 'shipped',             label: 'Shipped',             color: '#0D7490', soft: '#D0F0F8',   outline: false, closed: false },
+  { id: 'delivered',           label: 'Delivered',           color: '#2E7D4F', soft: C.greenSoft, outline: false, closed: false },
+  { id: 'paid',                label: 'Paid',                color: C.green,  soft: C.greenSoft,  outline: false, closed: true  },
+  { id: 'lost',                label: 'Closed Lost',         color: C.red,    soft: C.redSoft,    outline: false, closed: true  },
 ]
 
 const BUYER_STAGES = [
@@ -272,8 +277,8 @@ export default function BoardPage() {
         }
       }
       // Only count uncommitted units as revenue for open/in-progress deals
-      // Won deals: unsold inventory = loss (cost with no revenue)
-      if (d.stage !== 'won') {
+      // Paid deals: unsold inventory = loss (cost with no revenue)
+      if (d.stage !== 'paid') {
         for (const p of d.deal_products) {
           const committed = d.deal_buyers.reduce((s, b) => {
             const bp = b.deal_buyer_products.find(x => x.deal_product_id === p.id)
@@ -288,7 +293,7 @@ export default function BoardPage() {
     return d.deal_products.reduce((s, p) => s + (p.unit_sell ?? 0) * (p.units_available ?? 0), 0)
   }
   const stageValue = (id: string) => byStage(id).reduce((s, d) => s + calcRevenue(d), 0)
-  const activeValue = stageValue('open') + stageValue('progress')
+  const activeValue = STAGES.filter(s => !s.closed).reduce((sum, s) => sum + stageValue(s.id), 0)
   const totalValue = deals.reduce((s, d) => s + calcRevenue(d), 0)
 
   // ── Product form helpers ──────────────────────────────────
@@ -485,7 +490,7 @@ export default function BoardPage() {
       }
     } else {
       const { data: deal, error } = await supabase.from('deals').insert({
-        ...dealPayload, stage: 'open', created_by: user?.id ?? null,
+        ...dealPayload, stage: 'inventory-followup', created_by: user?.id ?? null,
       }).select().single()
       if (error || !deal) { alert('Deal create error: ' + error?.message); return }
 
@@ -531,7 +536,7 @@ export default function BoardPage() {
         }
       }
 
-      const notes = [{ deal_id: deal.id, author_name: firstName, text: `${firstName} created this deal in Open` }]
+      const notes = [{ deal_id: deal.id, author_name: firstName, text: `${firstName} created this deal in Inventory Follow-Up` }]
       if (formNote.trim()) notes.unshift({ deal_id: deal.id, author_name: firstName, text: formNote.trim() })
       await supabase.from('deal_notes').insert(notes)
     }
@@ -545,7 +550,7 @@ export default function BoardPage() {
     const label = STAGES.find(s => s.id === stageId)!.label
     const supabase = createClient()
     const update: Record<string, string> = { stage: stageId }
-    if (stageId === 'progress') {
+    if (stageId === 'inventory-secured') {
       const fullName = profile ? `${profile.first_name} ${profile.last_name}` : firstName
       update.sold_by = fullName
     }
@@ -593,7 +598,7 @@ export default function BoardPage() {
       contact_last_name: d.contact_last_name,
       contact_email: d.contact_email,
       contact_phone: d.contact_phone,
-      stage: 'open',
+      stage: 'inventory-followup',
       sourced_by: d.sourced_by,
       value: (p.unit_sell ?? 0) * remaining,
       created_by: user?.id ?? null,
@@ -723,7 +728,7 @@ export default function BoardPage() {
                 onClick={() => setShowClosed(s => !s)}
                 style={{ background: showClosed ? C.ink : C.card, color: showClosed ? '#fff' : C.sub, border: `1.5px solid ${showClosed ? C.ink : C.line}`, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
               >
-                {showClosed ? '← Board' : `Closed (${deals.filter(d => d.stage === 'won' || d.stage === 'lost').length})`}
+                {showClosed ? '← Board' : `Closed (${deals.filter(d => d.stage === 'paid' || d.stage === 'lost').length})`}
               </button>
               <button onClick={exportCSV} style={{ background: C.card, color: C.sub, border: `1.5px solid ${C.line}`, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 ↓ CSV
@@ -763,7 +768,7 @@ export default function BoardPage() {
       {/* ── Closed deals list ── */}
       {showClosed && (
         <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 20px 60px' }}>
-          {(['won', 'lost'] as const).map(stageId => {
+          {(['paid', 'lost'] as const).map(stageId => {
             const stageConf = STAGES.find(s => s.id === stageId)!
             const list = byStage(stageId)
             return (
@@ -845,7 +850,7 @@ export default function BoardPage() {
       {!showClosed && (
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 16px 60px', overflowX: 'auto' }}>
         <div style={{ display: 'flex', gap: 14, minWidth: 920, alignItems: 'flex-start' }}>
-          {STAGES.filter(s => s.id === 'open' || s.id === 'progress').map(stage => {
+          {STAGES.filter(s => !s.closed).map(stage => {
             const list = byStage(stage.id)
             return (
               <div key={stage.id} style={{ flex: 1, minWidth: 240 }}>

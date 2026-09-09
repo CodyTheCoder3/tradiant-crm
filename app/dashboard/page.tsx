@@ -51,7 +51,7 @@ function dealFinancials(d: Deal) {
       }
     }
     // Won deals: unsold units = $0 revenue and $0 cost (broker model)
-    if (d.stage !== 'won') {
+    if (d.stage !== 'paid') {
       for (const p of d.deal_products) {
         const committed = d.deal_buyers.reduce((s, b) => {
           const bp = b.deal_buyer_products.find(x => x.deal_product_id === p.id)
@@ -65,7 +65,7 @@ function dealFinancials(d: Deal) {
     rev = d.deal_products.reduce((s, p) => s + (p.unit_sell ?? 0) * (p.units_available ?? 0), 0)
   }
   // Won deals: cost only on units actually sold (broker — no inventory risk on unsold)
-  const cost = d.stage === 'won' && hasBuyers
+  const cost = d.stage === 'paid' && hasBuyers
     ? d.deal_products.reduce((s, p) => {
         const sold = d.deal_buyers.reduce((su, b) => {
           const bp = b.deal_buyer_products.find(x => x.deal_product_id === p.id)
@@ -131,7 +131,7 @@ export default function DashboardPage() {
     return dt.getMonth() === selMonth && dt.getFullYear() === selYear
   }
 
-  const wonDeals   = deals.filter(d => d.stage === 'won'  && inMonth(d))
+  const wonDeals   = deals.filter(d => d.stage === 'paid'  && inMonth(d))
   const lostDeals  = deals.filter(d => d.stage === 'lost' && inMonth(d))
   const activeDeals = deals.filter(d => d.stage === 'open' || d.stage === 'progress')
 
@@ -148,7 +148,7 @@ export default function DashboardPage() {
     let y = selYear
     while (m < 0) { m += 12; y-- }
     const monthWon = deals.filter(d => {
-      if (d.stage !== 'won' || !d.close_date) return false
+      if (d.stage !== 'paid' || !d.close_date) return false
       const dt = new Date(d.close_date + 'T12:00:00')
       return dt.getMonth() === m && dt.getFullYear() === y
     })
@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
   // Top buyers all-time
   const buyerMap: Record<string, { name: string; revenue: number; units: number; vendors: Set<string> }> = {}
-  for (const d of deals.filter(d => d.stage === 'won')) {
+  for (const d of deals.filter(d => d.stage === 'paid')) {
     for (const b of d.deal_buyers) {
       const name = b.company || [b.contact_first_name, b.contact_last_name].filter(Boolean).join(' ') || 'Unknown'
       const key = name.toLowerCase().trim()
