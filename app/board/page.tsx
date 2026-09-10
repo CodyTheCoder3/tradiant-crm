@@ -1037,18 +1037,16 @@ export default function BoardPage() {
                         </div>
 
                         {/* Move controls */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-                          {stage.id === 'open' && (
-                            <MiniBtn color={C.orange} onClick={() => moveDeal(d.id, 'progress')}>Start →</MiniBtn>
-                          )}
-                          {stage.id === 'progress' && (<>
-                            <MiniBtn color={C.green} onClick={() => moveDeal(d.id, 'won')}>Won ✓</MiniBtn>
-                            <MiniBtn color={C.red} onClick={() => moveDeal(d.id, 'lost')}>Lost ✕</MiniBtn>
-                            <MiniBtn color={C.sub} ghost onClick={() => moveDeal(d.id, 'open')}>← Back</MiniBtn>
-                          </>)}
-                          {(stage.id === 'won' || stage.id === 'lost') && (
-                            <MiniBtn color={C.sub} ghost onClick={() => moveDeal(d.id, 'progress')}>Reopen</MiniBtn>
-                          )}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10, alignItems: 'center' }}>
+                          <select
+                            value={d.stage}
+                            onChange={e => moveDeal(d.id, e.target.value)}
+                            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: C.cream, color: C.ink, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            {STAGES.map(s => (
+                              <option key={s.id} value={s.id}>{s.label}</option>
+                            ))}
+                          </select>
                           <MiniBtn color={C.sub} ghost onClick={() => { setExpandedId(isOpen ? null : d.id); setNoteDraft('') }}>
                             {isOpen ? 'Hide notes' : `Notes (${d.deal_notes.length})`}
                           </MiniBtn>
