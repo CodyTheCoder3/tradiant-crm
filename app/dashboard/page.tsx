@@ -103,6 +103,7 @@ export default function DashboardPage() {
       const { data, error } = await supabase
         .from('deals')
         .select('*, deal_products(*), deal_buyers(*, deal_buyer_products(*))')
+        .eq('created_by', session.user.id)
         .order('created_at', { ascending: false })
       if (error) console.error('Dashboard fetch error:', error)
       setDeals((data ?? []).map((d: Deal) => ({
