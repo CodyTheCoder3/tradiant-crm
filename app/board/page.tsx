@@ -433,8 +433,8 @@ export default function BoardPage() {
           unit_cost: p.unitCost !== '' ? Number(p.unitCost) : null,
           unit_sell: p.unitSell !== '' ? Number(p.unitSell) : null,
           units_available: p.unitsAvailable !== '' ? Number(p.unitsAvailable) : null,
-          cases_available: p.casesAvailable !== '' ? Number(p.casesAvailable) : null,
-          pallets_available: p.palletsAvailable !== '' ? Number(p.palletsAvailable) : null,
+          cases_available: p.casesAvailable !== '' ? Math.round(Number(p.casesAvailable)) : null,
+          pallets_available: p.palletsAvailable !== '' ? Math.round(Number(p.palletsAvailable)) : null,
           expiration_date: p.expirationDate || null,
           sort_order: i,
         }
@@ -1281,11 +1281,11 @@ export default function BoardPage() {
                           </div>
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Cases</span>
-                            <input style={smInput} type="number" min="0" value={p.casesAvailable} onChange={e => updateProduct(i, 'casesAvailable', e.target.value)} placeholder="0" />
+                            <input style={smInput} type="number" min="0" step="1" value={p.casesAvailable} onChange={e => updateProduct(i, 'casesAvailable', e.target.value)} placeholder="0" />
                           </div>
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Pallets</span>
-                            <input style={smInput} type="number" min="0" value={p.palletsAvailable} onChange={e => updateProduct(i, 'palletsAvailable', e.target.value)} placeholder="0" />
+                            <input style={smInput} type="number" min="0" step="1" value={p.palletsAvailable} onChange={e => updateProduct(i, 'palletsAvailable', e.target.value)} placeholder="0" />
                           </div>
                         </div>
                       </div>
