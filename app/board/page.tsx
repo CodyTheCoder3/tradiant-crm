@@ -581,16 +581,18 @@ export default function BoardPage() {
   }
 
   const saveNoteEdit = async (noteId: string) => {
-    if (!editingNoteText.trim()) return
     const supabase = createClient()
-    await supabase.from('deal_notes').update({ text: editingNoteText.trim() }).eq('id', noteId)
+    if (!editingNoteText.trim()) {
+      await supabase.from('deal_notes').delete().eq('id', noteId)
+    } else {
+      await supabase.from('deal_notes').update({ text: editingNoteText.trim() }).eq('id', noteId)
+    }
     setEditingNoteId(null)
     setEditingNoteText('')
     fetchDeals()
   }
 
   const deleteNote = async (noteId: string) => {
-    if (!confirm('Delete this note?')) return
     const supabase = createClient()
     await supabase.from('deal_notes').delete().eq('id', noteId)
     fetchDeals()
@@ -1075,9 +1077,10 @@ export default function BoardPage() {
                         {/* Notes */}
                         {isOpen && (
                           <div style={{ marginTop: 10, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
-                            <div style={{ display: 'flex', gap: 6 }}>
+                            {/* Note input */}
+                            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                               <input
-                                style={{ ...inputStyle, padding: '8px 10px', fontSize: 13 }}
+                                style={{ ...inputStyle, padding: '8px 10px', fontSize: 13, flex: 1 }}
                                 placeholder="Add a note…"
                                 value={noteDraft}
                                 onChange={e => setNoteDraft(e.target.value)}
@@ -1085,35 +1088,42 @@ export default function BoardPage() {
                               />
                               <MiniBtn color={C.orange} onClick={() => addNote(d.id)}>Add</MiniBtn>
                             </div>
-                            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+                            {/* Notes list */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
                               {d.deal_notes.map(n => (
-                                <div key={n.id} style={{ fontSize: 12, marginBottom: 6 }}>
-                                  <span style={{ color: C.sub }}>{fmtStamp(n.created_at)} · </span>
+                                <div key={n.id} style={{ background: C.cream, borderRadius: 8, padding: '8px 10px', border: `1px solid ${C.line}` }}>
+                                  <div style={{ fontSize: 11, color: C.sub, marginBottom: 3 }}>
+                                    <strong style={{ color: C.ink }}>{n.author_name}</strong> · {fmtStamp(n.created_at)}
+                                  </div>
                                   {editingNoteId === n.id ? (
-                                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                                       <input
-                                        style={{ flex: 1, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: C.cream, color: C.ink, fontFamily: 'inherit' }}
+                                        style={{ fontSize: 13, padding: '6px 8px', borderRadius: 6, border: `1px solid ${C.orange}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none' }}
                                         value={editingNoteText}
                                         onChange={e => setEditingNoteText(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') saveNoteEdit(n.id); if (e.key === 'Escape') setEditingNoteId(null) }}
                                         autoFocus
                                       />
-                                      <button onClick={() => saveNoteEdit(n.id)} style={{ background: 'none', border: 'none', color: C.green, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Save</button>
-                                      <button onClick={() => setEditingNoteId(null)} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Cancel</button>
+                                      <div style={{ display: 'flex', gap: 8 }}>
+                                        <button onClick={() => saveNoteEdit(n.id)} style={{ background: C.green, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
+                                        <button onClick={() => setEditingNoteId(null)} style={{ background: 'none', border: `1px solid ${C.line}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, color: C.sub, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                                      </div>
                                     </div>
                                   ) : (
-                                    <span>
-                                      {n.text}
-                                      <button onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text) }} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 11, cursor: 'pointer', marginLeft: 6, padding: 0, fontFamily: 'inherit' }}>Edit</button>
-                                      <button onClick={() => deleteNote(n.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 11, cursor: 'pointer', marginLeft: 4, padding: 0, fontFamily: 'inherit' }}>Delete</button>
-                                    </span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                                      <span style={{ fontSize: 13, color: C.ink, flex: 1 }}>{n.text}</span>
+                                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                                        <button onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text) }} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Edit</button>
+                                        <button onClick={() => deleteNote(n.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Delete</button>
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
                               ))}
                             </div>
-                            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                            <div style={{ display: 'flex', gap: 10, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
                               <button onClick={() => openEdit(d)} style={{ background: 'none', border: 'none', color: C.orange, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Edit deal</button>
-                              <button onClick={() => deleteDeal(d.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Delete</button>
+                              <button onClick={() => deleteDeal(d.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Delete deal</button>
                             </div>
                           </div>
                         )}
