@@ -998,7 +998,7 @@ export default function BoardPage() {
                                 return (
                                   <div key={p.id}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                                      <span style={{ fontSize: 11, fontWeight: 600, color: C.ink, lineHeight: 1.3 }}>{p.description || 'Product'}</span>
+                                      <span style={{ fontSize: 11, fontWeight: 600, color: C.ink, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '55%' }} title={p.description || 'Product'}>{p.description || 'Product'}</span>
                                       <span style={{ fontSize: 10, color: C.sub, whiteSpace: 'nowrap', marginLeft: 8 }}>
                                         {committed.toLocaleString()}<span style={{ color: C.sub }}> / {avail.toLocaleString()} · </span>
                                         <b style={{ color: soldOut ? C.green : C.orange }}>{soldOut ? 'Sold out' : `${remaining.toLocaleString()} left`}</b>
