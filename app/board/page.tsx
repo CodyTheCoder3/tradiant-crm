@@ -196,11 +196,12 @@ export default function BoardPage() {
 
   // ── Fetch deals ───────────────────────────────────────────
   const fetchDeals = useCallback(async () => {
+    if (!user) return
     const supabase = createClient()
     const { data, error } = await supabase
       .from('deals')
       .select('*, deal_notes(*), deal_products(*), deal_buyers(*, deal_buyer_products(*))')
-      .eq('created_by', user?.id)
+      .eq('created_by', user.id)
       .order('created_at', { ascending: false })
     if (error) { console.error(error); return }
     const normalized = (data ?? []).map((d: Deal) => ({
