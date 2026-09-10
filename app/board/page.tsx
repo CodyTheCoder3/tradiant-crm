@@ -966,17 +966,17 @@ export default function BoardPage() {
                         {/* Revenue / Cost / Profit */}
                         {hasFinancials && (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5, marginBottom: 10 }}>
-                            <div style={{ background: '#EAF6EE', borderRadius: 8, padding: '8px 10px' }}>
+                            <div style={{ background: '#EAF6EE', borderRadius: 8, padding: '7px 8px' }}>
                               <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.green, marginBottom: 3 }}>Revenue</div>
-                              <div style={{ fontWeight: 800, fontSize: 15, color: C.green, lineHeight: 1 }}>{fmtMoney(rev)}</div>
+                              <div style={{ fontWeight: 800, fontSize: 13, color: C.green, lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtMoney(rev)}</div>
                             </div>
-                            <div style={{ background: '#FDECEA', borderRadius: 8, padding: '8px 10px' }}>
+                            <div style={{ background: '#FDECEA', borderRadius: 8, padding: '7px 8px' }}>
                               <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.red, marginBottom: 3 }}>Cost</div>
-                              <div style={{ fontWeight: 800, fontSize: 15, color: C.red, lineHeight: 1 }}>{fmtMoney(cost)}</div>
+                              <div style={{ fontWeight: 800, fontSize: 13, color: C.red, lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtMoney(cost)}</div>
                             </div>
-                            <div style={{ background: profit >= 0 ? '#FEF9E7' : '#FDECEA', borderRadius: 8, padding: '8px 10px' }}>
+                            <div style={{ background: profit >= 0 ? '#FEF9E7' : '#FDECEA', borderRadius: 8, padding: '7px 8px' }}>
                               <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: profit >= 0 ? '#B7860B' : C.red, marginBottom: 3 }}>Profit</div>
-                              <div style={{ fontWeight: 800, fontSize: 15, color: profit >= 0 ? '#B7860B' : C.red, lineHeight: 1 }}>{fmtMoney(profit)}</div>
+                              <div style={{ fontWeight: 800, fontSize: 13, color: profit >= 0 ? '#B7860B' : C.red, lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fmtMoney(profit)}</div>
                             </div>
                           </div>
                         )}
