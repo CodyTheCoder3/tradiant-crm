@@ -164,6 +164,8 @@ export default function BoardPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
   const [savingNote, setSavingNote] = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteText, setEditingNoteText] = useState('')
   const [showClosed, setShowClosed] = useState(false)
   const [knownBuyers, setKnownBuyers] = useState<{ company: string; contactFirst: string; contactLast: string; email: string; phone: string }[]>([])
   const [buyerSuggestIdx, setBuyerSuggestIdx] = useState<number | null>(null)
@@ -575,6 +577,22 @@ export default function BoardPage() {
     await supabase.from('deal_notes').insert({ deal_id: id, author_name: firstName, text: noteDraft.trim() })
     setNoteDraft('')
     setSavingNote(false)
+    fetchDeals()
+  }
+
+  const saveNoteEdit = async (noteId: string) => {
+    if (!editingNoteText.trim()) return
+    const supabase = createClient()
+    await supabase.from('deal_notes').update({ text: editingNoteText.trim() }).eq('id', noteId)
+    setEditingNoteId(null)
+    setEditingNoteText('')
+    fetchDeals()
+  }
+
+  const deleteNote = async (noteId: string) => {
+    if (!confirm('Delete this note?')) return
+    const supabase = createClient()
+    await supabase.from('deal_notes').delete().eq('id', noteId)
     fetchDeals()
   }
 
@@ -1069,8 +1087,27 @@ export default function BoardPage() {
                             </div>
                             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
                               {d.deal_notes.map(n => (
-                                <div key={n.id} style={{ fontSize: 12 }}>
-                                  <span style={{ color: C.sub }}>{fmtStamp(n.created_at)} · </span>{n.text}
+                                <div key={n.id} style={{ fontSize: 12, marginBottom: 6 }}>
+                                  <span style={{ color: C.sub }}>{fmtStamp(n.created_at)} · </span>
+                                  {editingNoteId === n.id ? (
+                                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                      <input
+                                        style={{ flex: 1, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: C.cream, color: C.ink, fontFamily: 'inherit' }}
+                                        value={editingNoteText}
+                                        onChange={e => setEditingNoteText(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') saveNoteEdit(n.id); if (e.key === 'Escape') setEditingNoteId(null) }}
+                                        autoFocus
+                                      />
+                                      <button onClick={() => saveNoteEdit(n.id)} style={{ background: 'none', border: 'none', color: C.green, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Save</button>
+                                      <button onClick={() => setEditingNoteId(null)} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Cancel</button>
+                                    </div>
+                                  ) : (
+                                    <span>
+                                      {n.text}
+                                      <button onClick={() => { setEditingNoteId(n.id); setEditingNoteText(n.text) }} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 11, cursor: 'pointer', marginLeft: 6, padding: 0, fontFamily: 'inherit' }}>Edit</button>
+                                      <button onClick={() => deleteNote(n.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 11, cursor: 'pointer', marginLeft: 4, padding: 0, fontFamily: 'inherit' }}>Delete</button>
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
