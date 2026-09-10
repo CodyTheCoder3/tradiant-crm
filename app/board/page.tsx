@@ -249,7 +249,7 @@ export default function BoardPage() {
       }
     }
     setKnownVendors(Array.from(vendorSeen.values()))
-  }, [])
+  }, [user])
 
   useEffect(() => { if (user) fetchDeals() }, [user, fetchDeals])
 
