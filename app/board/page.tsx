@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, CSSProperties } from 'react'
+import React, { useState, useEffect, useCallback, CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -807,7 +807,7 @@ export default function BoardPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: C.cream }}>
-                          {['Deal', 'Vendor', 'Products', 'Revenue', 'Profit', 'Closed', ''].map(h => (
+                          {['Deal', 'Vendor', 'Products', 'Revenue', 'Profit', 'Closed', 'Notes', ''].map(h => (
                             <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.sub }}>{h}</th>
                           ))}
                         </tr>
@@ -839,7 +839,8 @@ export default function BoardPage() {
                           const freight = d.deal_buyers.reduce((s, b) => s + Number(b.freight_cost ?? 0), 0)
                           const profit = rev - cost - freight
                           return (
-                            <tr key={d.id} style={{ borderTop: `1px solid ${C.line}`, background: i % 2 === 0 ? C.card : '#FDFAF6' }}>
+                            <React.Fragment key={d.id}>
+                            <tr style={{ borderTop: `1px solid ${C.line}`, background: i % 2 === 0 ? C.card : '#FDFAF6' }}>
                               <td style={{ padding: '11px 14px', fontWeight: 700, color: C.orange, whiteSpace: 'nowrap' }}>
                                 {d.deal_number != null ? `#${d.deal_number}` : '—'}
                               </td>
@@ -851,11 +852,39 @@ export default function BoardPage() {
                               <td style={{ padding: '11px 14px', fontWeight: 700, color: profit >= 0 ? C.green : C.red }}>{fmtMoney(profit)}</td>
                               <td style={{ padding: '11px 14px', color: C.sub, fontSize: 12 }}>{fmtDate(d.close_date)}</td>
                               <td style={{ padding: '11px 14px' }}>
-                                <button onClick={() => openEdit(d)} style={{ background: 'none', border: `1px solid ${C.line}`, borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: C.sub, fontFamily: 'inherit' }}>
+                                {d.deal_notes.length > 0 && (
+                                  <button onClick={() => setExpandedId(expandedId === d.id ? null : d.id)} style={{ background: 'none', border: `1px solid ${C.line}`, borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: C.sub, fontFamily: 'inherit' }}>
+                                    {expandedId === d.id ? 'Hide' : `${d.deal_notes.length} note${d.deal_notes.length !== 1 ? 's' : ''}`}
+                                  </button>
+                                )}
+                              </td>
+                              <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                                <button onClick={() => openEdit(d)} style={{ background: 'none', border: `1px solid ${C.line}`, borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: C.sub, fontFamily: 'inherit', marginRight: 6 }}>
                                   Edit
                                 </button>
+                                {stageId === 'lost' && (
+                                  <button onClick={() => moveDeal(d.id, 'inventory-followup')} style={{ background: 'none', border: `1px solid ${C.orange}`, borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: C.orange, fontFamily: 'inherit' }}>
+                                    Reopen
+                                  </button>
+                                )}
                               </td>
                             </tr>
+                            {expandedId === d.id && (
+                              <tr style={{ background: '#FDFAF6' }}>
+                                <td colSpan={8} style={{ padding: '10px 14px 14px', borderTop: `1px solid ${C.line}` }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.sub, marginBottom: 8 }}>Notes</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {d.deal_notes.map(n => (
+                                      <div key={n.id} style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 8, padding: '8px 12px' }}>
+                                        <div style={{ fontSize: 11, color: C.sub, marginBottom: 3 }}><b style={{ color: C.ink }}>{n.author_name}</b> · {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                        <div style={{ fontSize: 13, color: C.ink }}>{n.text}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            </React.Fragment>
                           )
                         })}
                       </tbody>
