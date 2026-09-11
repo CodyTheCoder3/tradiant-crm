@@ -294,7 +294,8 @@ export default function BoardPage() {
       }
       return rev
     }
-    return d.deal_products.reduce((s, p) => s + (p.unit_sell ?? 0) * (p.units_available ?? 0), 0)
+    const productRev = d.deal_products.reduce((s, p) => s + (p.unit_sell ?? 0) * (p.units_available ?? 0), 0)
+    return productRev > 0 ? productRev : (d.value ?? 0)
   }
   const stageValue = (id: string) => byStage(id).reduce((s, d) => s + calcRevenue(d), 0)
   const activeValue = STAGES.filter(s => !s.closed).reduce((sum, s) => sum + stageValue(s.id), 0)
