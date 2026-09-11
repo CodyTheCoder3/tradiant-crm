@@ -1316,7 +1316,7 @@ export default function BoardPage() {
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Expiration</span>
                             <input style={smInput} type="text"
-                              value={p.expirationDate ? (() => { const [y,m,d] = p.expirationDate.split('-'); return `${m}/${d}/${y}` })() : ''}
+                              value={p.expirationDate && /^\d{4}-\d{2}-\d{2}$/.test(p.expirationDate) ? (() => { const [y,m,d] = p.expirationDate.split('-'); return `${m}/${d}/${y}` })() : (p.expirationDate && !p.expirationDate.includes('-') ? p.expirationDate : '')}
                               placeholder="MM/DD/YYYY"
                               onChange={e => {
                                 const text = e.target.value.trim()
