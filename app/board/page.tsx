@@ -1314,7 +1314,14 @@ export default function BoardPage() {
                           </div>
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Expiration</span>
-                            <input style={smInput} type="date" value={p.expirationDate} onChange={e => updateProduct(i, 'expirationDate', e.target.value)} />
+                            <input style={smInput} type="date" value={p.expirationDate}
+                              onChange={e => updateProduct(i, 'expirationDate', e.target.value)}
+                              onPaste={e => {
+                                const text = e.clipboardData.getData('text').trim()
+                                const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+                                if (m) { e.preventDefault(); updateProduct(i, 'expirationDate', `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`) }
+                              }}
+                            />
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
