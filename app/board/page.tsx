@@ -1316,14 +1316,13 @@ export default function BoardPage() {
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Expiration</span>
                             <input style={smInput} type="text"
-                              value={p.expirationDate && /^\d{4}-\d{2}-\d{2}$/.test(p.expirationDate) ? (() => { const [y,m,d] = p.expirationDate.split('-'); return `${m}/${d}/${y}` })() : (p.expirationDate && !p.expirationDate.includes('-') ? p.expirationDate : '')}
+                              defaultValue={p.expirationDate && /^\d{4}-\d{2}-\d{2}$/.test(p.expirationDate) ? (() => { const [y,m,d] = p.expirationDate.split('-'); return `${m}/${d}/${y}` })() : (p.expirationDate && !p.expirationDate.includes('-') ? p.expirationDate : '')}
                               placeholder="MM/DD/YYYY"
-                              onChange={e => {
+                              onBlur={e => {
                                 const text = e.target.value.trim()
                                 const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
                                 if (m) updateProduct(i, 'expirationDate', `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`)
                                 else if (text === '') updateProduct(i, 'expirationDate', '')
-                                else updateProduct(i, 'expirationDate', text)
                               }}
                             />
                           </div>
