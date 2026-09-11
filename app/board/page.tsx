@@ -317,7 +317,8 @@ export default function BoardPage() {
 
   // ── Open form ─────────────────────────────────────────────
   const openAdd = () => {
-    setFormDealNumber(''); setFormCompany(''); setFormContactFirst(''); setFormContactLast('')
+    const maxNum = deals.reduce((m, d) => d.deal_number != null && d.deal_number > m ? d.deal_number : m, 0)
+    setFormDealNumber(maxNum > 0 ? String(maxNum + 1) : ''); setFormCompany(''); setFormContactFirst(''); setFormContactLast('')
     setFormContactEmail(''); setFormContactPhone(''); setFormValue('')
     setFormFreight(''); setFormCloseDate(''); setFormNote('')
     setFormSourcedBy(profile ? `${profile.first_name} ${profile.last_name}` : '')
@@ -1314,12 +1315,15 @@ export default function BoardPage() {
                           </div>
                           <div style={{ flex: 1 }}>
                             <span style={labelStyle}>Expiration</span>
-                            <input style={smInput} type="date" value={p.expirationDate}
-                              onChange={e => updateProduct(i, 'expirationDate', e.target.value)}
-                              onPaste={e => {
-                                const text = e.clipboardData.getData('text').trim()
+                            <input style={smInput} type="text"
+                              value={p.expirationDate ? (() => { const [y,m,d] = p.expirationDate.split('-'); return `${m}/${d}/${y}` })() : ''}
+                              placeholder="MM/DD/YYYY"
+                              onChange={e => {
+                                const text = e.target.value.trim()
                                 const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-                                if (m) { e.preventDefault(); updateProduct(i, 'expirationDate', `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`) }
+                                if (m) updateProduct(i, 'expirationDate', `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`)
+                                else if (text === '') updateProduct(i, 'expirationDate', '')
+                                else updateProduct(i, 'expirationDate', text)
                               }}
                             />
                           </div>
