@@ -771,9 +771,9 @@ export default function BoardPage() {
           <div style={{ margin: '16px 0 0', paddingBottom: 16, borderTop: `1px solid ${C.line}`, paddingTop: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.sub, marginBottom: 8 }}>
               <span><b style={{ color: C.ink, fontWeight: 700 }}>{fmtMoney(activeValue)}</b> active in pipeline</span>
-              <span>{fmtMoney(totalValue)} all-time tracked</span>
+              <span><b style={{ color: C.ink, fontWeight: 700 }}>{fmtMoney(totalValue)}</b> all-time tracked</span>
             </div>
-            <div style={{ display: 'flex', height: 6, borderRadius: 999, overflow: 'hidden', background: '#EDE4D8' }}>
+            <div style={{ display: 'flex', height: 12, borderRadius: 999, overflow: 'hidden', background: '#EDE4D8' }}>
               {STAGES.map(s => {
                 const v = stageValue(s.id)
                 const w = totalValue ? (v / totalValue) * 100 : 0
@@ -781,6 +781,19 @@ export default function BoardPage() {
                   <div key={s.id} title={`${s.label}: ${fmtMoney(v)}`}
                     style={{ width: w + '%', background: s.outline ? '#F3A468' : s.color, transition: 'width .3s' }} />
                 ) : null
+              })}
+            </div>
+            {/* Legend */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 10 }}>
+              {STAGES.map(s => {
+                const v = stageValue(s.id)
+                if (!v) return null
+                return (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 999, background: s.outline ? '#F3A468' : s.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: C.sub }}>{s.label}: <b style={{ color: C.ink }}>{fmtMoney(v)}</b></span>
+                  </div>
+                )
               })}
             </div>
           </div>
