@@ -33,6 +33,7 @@ const BUYER_STAGES = [
 
 // ── Types ─────────────────────────────────────────────────────
 type Note = { id: string; deal_id: string; author_name: string; text: string; created_at: string }
+type DealLink = { id: string; deal_id: string; label: string | null; url: string; created_at: string }
 type Product = {
   id: string; deal_id: string; description: string | null
   unit_cost: number | null; unit_sell: number | null
@@ -59,6 +60,7 @@ type Deal = {
   deal_notes: Note[]
   deal_products: Product[]
   deal_buyers: Buyer[]
+  deal_links: DealLink[]
 }
 type Profile = { id: string; first_name: string; last_name: string; email: string }
 type ProductForm = {
@@ -166,6 +168,8 @@ export default function BoardPage() {
   const [savingNote, setSavingNote] = useState(false)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingNoteText, setEditingNoteText] = useState('')
+  const [linkDrafts, setLinkDrafts] = useState<Record<string, { url: string; label: string }>>({})
+  const [savingLink, setSavingLink] = useState<string | null>(null)
   const [showClosed, setShowClosed] = useState(false)
   const [knownBuyers, setKnownBuyers] = useState<{ company: string; contactFirst: string; contactLast: string; email: string; phone: string }[]>([])
   const [buyerSuggestIdx, setBuyerSuggestIdx] = useState<number | null>(null)
@@ -202,7 +206,7 @@ export default function BoardPage() {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('deals')
-      .select('*, deal_notes(*), deal_products(*), deal_buyers(*, deal_buyer_products(*))')
+      .select('*, deal_notes(*), deal_products(*), deal_buyers(*, deal_buyer_products(*)), deal_links(*)')
       .eq('created_by', user.id)
       .order('created_at', { ascending: false })
     if (error) { console.error(error); return }
@@ -214,6 +218,7 @@ export default function BoardPage() {
       deal_products: [...(d.deal_products ?? [])].sort((a, b) => a.sort_order - b.sort_order),
       deal_buyers: [...(d.deal_buyers ?? [])].sort((a, b) => a.sort_order - b.sort_order)
         .map((b: Buyer) => ({ ...b, deal_buyer_products: b.deal_buyer_products ?? [] })),
+      deal_links: [...(d.deal_links ?? [])].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
     }))
     setDeals(normalized)
     setLoading(false)
@@ -264,6 +269,7 @@ export default function BoardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deal_notes' }, fetchDeals)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deal_products' }, fetchDeals)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deal_buyers' }, fetchDeals)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deal_links' }, fetchDeals)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [user, fetchDeals])
@@ -600,6 +606,27 @@ export default function BoardPage() {
     fetchDeals()
   }
 
+  const addLink = async (dealId: string) => {
+    const draft = linkDrafts[dealId]
+    if (!draft?.url.trim()) return
+    setSavingLink(dealId)
+    const supabase = createClient()
+    await supabase.from('deal_links').insert({
+      deal_id: dealId,
+      url: draft.url.trim(),
+      label: draft.label.trim() || null,
+    })
+    setLinkDrafts(prev => ({ ...prev, [dealId]: { url: '', label: '' } }))
+    setSavingLink(null)
+    fetchDeals()
+  }
+
+  const deleteLink = async (linkId: string) => {
+    const supabase = createClient()
+    await supabase.from('deal_links').delete().eq('id', linkId)
+    fetchDeals()
+  }
+
   const splitDeal = async (d: Deal, p: Product, remaining: number) => {
     const nextNum = d.deal_number != null ? d.deal_number + 1 : null
     const label = nextNum ? `#${nextNum} ` : ''
@@ -896,6 +923,18 @@ export default function BoardPage() {
                                       </div>
                                     ))}
                                   </div>
+                                  {d.deal_links.length > 0 && (
+                                    <div style={{ marginTop: 10 }}>
+                                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.sub, marginBottom: 6 }}>Links</div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                        {d.deal_links.map(lnk => (
+                                          <a key={lnk.id} href={lnk.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none' }}>
+                                            {lnk.label || lnk.url}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             )}
@@ -1164,6 +1203,39 @@ export default function BoardPage() {
                                   )}
                                 </div>
                               ))}
+                            </div>
+                            {/* Links section */}
+                            <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Links</div>
+                              {d.deal_links.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8 }}>
+                                  {d.deal_links.map(lnk => (
+                                    <div key={lnk.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                      <a href={lnk.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#2563EB', textDecoration: 'none', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {lnk.label || lnk.url}
+                                      </a>
+                                      <button onClick={() => deleteLink(lnk.id)} style={{ background: 'none', border: 'none', color: C.red, fontSize: 11, cursor: 'pointer', padding: 0, flexShrink: 0, fontFamily: 'inherit' }}>Remove</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <input
+                                  style={{ flex: 1, fontSize: 12, padding: '5px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none', minWidth: 0 }}
+                                  placeholder="Paste link URL…"
+                                  value={linkDrafts[d.id]?.url ?? ''}
+                                  onChange={e => setLinkDrafts(prev => ({ ...prev, [d.id]: { url: e.target.value, label: prev[d.id]?.label ?? '' } }))}
+                                  onKeyDown={e => e.key === 'Enter' && addLink(d.id)}
+                                />
+                                <input
+                                  style={{ width: 90, fontSize: 12, padding: '5px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none' }}
+                                  placeholder="Label (opt)"
+                                  value={linkDrafts[d.id]?.label ?? ''}
+                                  onChange={e => setLinkDrafts(prev => ({ ...prev, [d.id]: { url: prev[d.id]?.url ?? '', label: e.target.value } }))}
+                                  onKeyDown={e => e.key === 'Enter' && addLink(d.id)}
+                                />
+                                <MiniBtn color={C.orange} onClick={() => addLink(d.id)}>{savingLink === d.id ? '…' : 'Add'}</MiniBtn>
+                              </div>
                             </div>
                             <div style={{ display: 'flex', gap: 10, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.line}` }}>
                               <button onClick={() => openEdit(d)} style={{ background: 'none', border: 'none', color: C.orange, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Edit deal</button>
