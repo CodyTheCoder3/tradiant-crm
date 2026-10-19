@@ -1181,15 +1181,15 @@ export default function BoardPage() {
                           return (
                             <div style={{ marginTop: 10, borderTop: `1px solid ${C.line}`, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
                               {/* Next Action */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Next Action</span>
-                                <input
-                                  style={{ flex: 1, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none' }}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Next Action</span>
+                                <textarea
+                                  rows={2}
+                                  style={{ fontSize: 12, padding: '6px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none', resize: 'none', lineHeight: 1.4 }}
                                   placeholder="What needs to happen next…"
                                   value={draft.next_action}
                                   onChange={e => setActionDraft(d.id, 'next_action', e.target.value)}
                                   onBlur={e => saveActionField(d.id, 'next_action', e.target.value)}
-                                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                                 />
                               </div>
                               {/* Follow-Up Date */}
