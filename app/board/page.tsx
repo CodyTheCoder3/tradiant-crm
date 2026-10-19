@@ -1526,7 +1526,32 @@ export default function BoardPage() {
                         {/* Products purchased — only show when editing (products have real IDs) */}
                         {editingId && products.filter(p => p.id && (p.description.trim() || p.unitsAvailable !== '')).length > 0 && (
                           <div>
-                            <span style={labelStyle}>Products purchased</span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                              <span style={labelStyle}>Products purchased</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newUnits = { ...buyers[i].productUnits }
+                                  const newSell = { ...buyers[i].productSell }
+                                  products.forEach((p, pi) => {
+                                    if (!p.id || (!p.description.trim() && p.unitsAvailable === '')) return
+                                    const avail = p.unitsAvailable !== '' ? Number(p.unitsAvailable) : null
+                                    const committedByOthers = buyers.reduce((s, ob, oi) => {
+                                      if (oi === i) return s
+                                      const v = ob.productUnits[p.id!]
+                                      return s + (v !== '' && v !== undefined ? Number(v) : 0)
+                                    }, 0)
+                                    const remaining = avail != null ? avail - committedByOthers : null
+                                    if (remaining != null && remaining > 0) newUnits[p.id!] = String(remaining)
+                                    if (p.unitSell !== '') newSell[p.id!] = p.unitSell
+                                  })
+                                  setBuyers(bs => bs.map((b2, bi) => bi === i ? { ...b2, productUnits: newUnits, productSell: newSell } : b2))
+                                }}
+                                style={{ fontSize: 11, fontWeight: 600, color: C.orange, background: C.orangeSoft, border: `1px solid ${C.orange}`, borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                              >
+                                Autofill
+                              </button>
+                            </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                               {products.map((p, pi) => {
                                 if (!p.id || (!p.description.trim() && p.unitsAvailable === '')) return null
