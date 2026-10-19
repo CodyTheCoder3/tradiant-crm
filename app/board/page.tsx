@@ -174,6 +174,7 @@ export default function BoardPage() {
   const [savingLink, setSavingLink] = useState<string | null>(null)
   const [actionDrafts, setActionDrafts] = useState<Record<string, { next_action: string; followup_date: string; waiting_on: string }>>({})
   const [expandedNotesIds, setExpandedNotesIds] = useState<Set<string>>(new Set())
+  const [expandedActionIds, setExpandedActionIds] = useState<Set<string>>(new Set())
   const [showClosed, setShowClosed] = useState(false)
   const [knownBuyers, setKnownBuyers] = useState<{ company: string; contactFirst: string; contactLast: string; email: string; phone: string }[]>([])
   const [buyerSuggestIdx, setBuyerSuggestIdx] = useState<number | null>(null)
@@ -1176,51 +1177,81 @@ export default function BoardPage() {
                           const today = new Date().toISOString().slice(0, 10)
                           const isOverdue = draft.followup_date && draft.followup_date < today
                           const isToday = draft.followup_date === today
-                          const dateColor = isOverdue ? C.red : isToday ? C.orange : C.ink
-                          const dateBg = isOverdue ? '#FEF0EE' : isToday ? C.orangeSoft : C.cream
+                          const isExpanded = expandedActionIds.has(d.id)
+                          const hasAny = draft.next_action || draft.followup_date || draft.waiting_on
+                          const toggleAction = () => setExpandedActionIds(prev => { const s = new Set(prev); s.has(d.id) ? s.delete(d.id) : s.add(d.id); return s })
+                          const fmtFollowup = (iso: string) => {
+                            const dt = new Date(iso + 'T12:00:00')
+                            return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                          }
+                          const waitingLabel: Record<string, string> = { buyer: 'Buyer', supplier: 'Supplier', internal: 'Internal' }
                           return (
-                            <div style={{ marginTop: 10, borderTop: `1px solid ${C.line}`, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
-                              {/* Next Action */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Next Action</span>
-                                <textarea
-                                  rows={2}
-                                  style={{ fontSize: 12, padding: '6px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none', resize: 'none', lineHeight: 1.4 }}
-                                  placeholder="What needs to happen next…"
-                                  value={draft.next_action}
-                                  onChange={e => setActionDraft(d.id, 'next_action', e.target.value)}
-                                  onBlur={e => saveActionField(d.id, 'next_action', e.target.value)}
-                                />
-                              </div>
-                              {/* Follow-Up Date */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Follow-Up</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                                  <input
-                                    type="date"
-                                    style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1.5px solid ${isOverdue ? C.red : isToday ? C.orange : C.line}`, background: dateBg, color: dateColor, fontFamily: 'inherit', outline: 'none', fontWeight: isOverdue || isToday ? 700 : 400 }}
-                                    value={draft.followup_date}
-                                    onChange={e => setActionDraft(d.id, 'followup_date', e.target.value)}
-                                    onBlur={e => saveActionField(d.id, 'followup_date', e.target.value)}
+                            <div style={{ marginTop: 10, borderTop: `1px solid ${C.line}`, paddingTop: 8 }}>
+                              {/* Collapsed summary row */}
+                              {!isExpanded && (
+                                <button onClick={toggleAction} style={{ width: '100%', background: hasAny ? (isOverdue ? '#FEF0EE' : isToday ? C.orangeSoft : C.cream) : 'transparent', border: `1px solid ${isOverdue ? C.red : isToday ? C.orange : C.line}`, borderRadius: 8, padding: '7px 10px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: isOverdue ? C.red : isToday ? C.orange : C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0, marginTop: 1 }}>
+                                    {isOverdue ? '⚠ Overdue' : isToday ? '● Today' : 'Action'}
+                                  </span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    {draft.next_action ? (
+                                      <span style={{ fontSize: 12, color: C.ink, fontWeight: 500 }}>{draft.next_action}</span>
+                                    ) : (
+                                      <span style={{ fontSize: 12, color: C.sub, fontStyle: 'italic' }}>Set next action…</span>
+                                    )}
+                                    {(draft.followup_date || draft.waiting_on) && (
+                                      <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                                        {draft.followup_date && <span style={{ fontSize: 10, color: isOverdue ? C.red : isToday ? C.orange : C.sub, fontWeight: isOverdue || isToday ? 700 : 400 }}>{fmtFollowup(draft.followup_date)}</span>}
+                                        {draft.waiting_on && <span style={{ fontSize: 10, color: C.sub }}>· {waitingLabel[draft.waiting_on] ?? draft.waiting_on}</span>}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span style={{ fontSize: 10, color: C.sub, flexShrink: 0, marginTop: 2 }}>Edit</span>
+                                </button>
+                              )}
+                              {/* Expanded edit fields */}
+                              {isExpanded && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Action</span>
+                                    <button onClick={toggleAction} style={{ background: 'none', border: 'none', fontSize: 10, color: C.sub, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>Done ↑</button>
+                                  </div>
+                                  <textarea
+                                    rows={2}
+                                    autoFocus
+                                    style={{ fontSize: 12, padding: '6px 8px', borderRadius: 6, border: `1px solid ${C.orange}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none', resize: 'none', lineHeight: 1.4 }}
+                                    placeholder="What needs to happen next…"
+                                    value={draft.next_action}
+                                    onChange={e => setActionDraft(d.id, 'next_action', e.target.value)}
+                                    onBlur={e => saveActionField(d.id, 'next_action', e.target.value)}
                                   />
-                                  {isOverdue && <span style={{ fontSize: 10, fontWeight: 700, color: C.red, background: '#FEF0EE', borderRadius: 4, padding: '2px 6px' }}>Overdue</span>}
-                                  {isToday && <span style={{ fontSize: 10, fontWeight: 700, color: C.orange, background: C.orangeSoft, borderRadius: 4, padding: '2px 6px' }}>Today</span>}
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Follow-Up</div>
+                                      <input
+                                        type="date"
+                                        style={{ width: '100%', fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1.5px solid ${isOverdue ? C.red : isToday ? C.orange : C.line}`, background: isOverdue ? '#FEF0EE' : isToday ? C.orangeSoft : '#fff', color: isOverdue ? C.red : isToday ? C.orange : C.ink, fontFamily: 'inherit', outline: 'none', fontWeight: isOverdue || isToday ? 700 : 400 }}
+                                        value={draft.followup_date}
+                                        onChange={e => setActionDraft(d.id, 'followup_date', e.target.value)}
+                                        onBlur={e => saveActionField(d.id, 'followup_date', e.target.value)}
+                                      />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Waiting On</div>
+                                      <select
+                                        style={{ width: '100%', fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: draft.waiting_on ? C.ink : C.sub, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                        value={draft.waiting_on}
+                                        onChange={e => { setActionDraft(d.id, 'waiting_on', e.target.value); saveActionField(d.id, 'waiting_on', e.target.value) }}
+                                      >
+                                        <option value="">—</option>
+                                        <option value="buyer">Buyer</option>
+                                        <option value="supplier">Supplier</option>
+                                        <option value="internal">Internal</option>
+                                      </select>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              {/* Waiting On */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Waiting On</span>
-                                <select
-                                  style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: draft.waiting_on ? C.ink : C.sub, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
-                                  value={draft.waiting_on}
-                                  onChange={e => { setActionDraft(d.id, 'waiting_on', e.target.value); saveActionField(d.id, 'waiting_on', e.target.value) }}
-                                >
-                                  <option value="">—</option>
-                                  <option value="buyer">Buyer</option>
-                                  <option value="supplier">Supplier</option>
-                                  <option value="internal">Internal</option>
-                                </select>
-                              </div>
+                              )}
                             </div>
                           )
                         })()}
