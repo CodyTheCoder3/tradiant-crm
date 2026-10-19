@@ -58,6 +58,7 @@ type Deal = {
   contact_email: string | null; contact_phone: string | null
   close_date: string | null; stage: string; created_by: string | null; created_at: string
   sourced_by: string | null; sold_by: string | null
+  next_action: string | null; followup_date: string | null; waiting_on: string | null
   deal_notes: Note[]
   deal_products: Product[]
   deal_buyers: Buyer[]
@@ -171,6 +172,8 @@ export default function BoardPage() {
   const [editingNoteText, setEditingNoteText] = useState('')
   const [linkDrafts, setLinkDrafts] = useState<Record<string, { url: string; label: string }>>({})
   const [savingLink, setSavingLink] = useState<string | null>(null)
+  const [actionDrafts, setActionDrafts] = useState<Record<string, { next_action: string; followup_date: string; waiting_on: string }>>({})
+  const [expandedNotesIds, setExpandedNotesIds] = useState<Set<string>>(new Set())
   const [showClosed, setShowClosed] = useState(false)
   const [knownBuyers, setKnownBuyers] = useState<{ company: string; contactFirst: string; contactLast: string; email: string; phone: string }[]>([])
   const [buyerSuggestIdx, setBuyerSuggestIdx] = useState<number | null>(null)
@@ -627,6 +630,18 @@ export default function BoardPage() {
     await supabase.from('deal_links').delete().eq('id', linkId)
     fetchDeals()
   }
+
+  const saveActionField = async (dealId: string, field: 'next_action' | 'followup_date' | 'waiting_on', value: string) => {
+    const supabase = createClient()
+    await supabase.from('deals').update({ [field]: value || null }).eq('id', dealId)
+    fetchDeals()
+  }
+
+  const getActionDraft = (d: { id: string; next_action: string | null; followup_date: string | null; waiting_on: string | null }) =>
+    actionDrafts[d.id] ?? { next_action: d.next_action ?? '', followup_date: d.followup_date ?? '', waiting_on: d.waiting_on ?? '' }
+
+  const setActionDraft = (dealId: string, field: string, value: string) =>
+    setActionDrafts(prev => ({ ...prev, [dealId]: { ...getActionDraft({ id: dealId, next_action: null, followup_date: null, waiting_on: null }), ...prev[dealId], [field]: value } }))
 
   const splitDeal = async (d: Deal, p: Product, remaining: number) => {
     const nextNum = d.deal_number != null ? d.deal_number + 1 : null
@@ -1153,6 +1168,65 @@ export default function BoardPage() {
                               <option key={s.id} value={s.id}>{s.label}</option>
                             ))}
                           </select>
+                        </div>
+
+                        {/* ── Action section ── */}
+                        {(() => {
+                          const draft = getActionDraft(d)
+                          const today = new Date().toISOString().slice(0, 10)
+                          const isOverdue = draft.followup_date && draft.followup_date < today
+                          const isToday = draft.followup_date === today
+                          const dateColor = isOverdue ? C.red : isToday ? C.orange : C.ink
+                          const dateBg = isOverdue ? '#FEF0EE' : isToday ? C.orangeSoft : C.cream
+                          return (
+                            <div style={{ marginTop: 10, borderTop: `1px solid ${C.line}`, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                              {/* Next Action */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Next Action</span>
+                                <input
+                                  style={{ flex: 1, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: C.ink, fontFamily: 'inherit', outline: 'none' }}
+                                  placeholder="What needs to happen next…"
+                                  value={draft.next_action}
+                                  onChange={e => setActionDraft(d.id, 'next_action', e.target.value)}
+                                  onBlur={e => saveActionField(d.id, 'next_action', e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                                />
+                              </div>
+                              {/* Follow-Up Date */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Follow-Up</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                                  <input
+                                    type="date"
+                                    style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1.5px solid ${isOverdue ? C.red : isToday ? C.orange : C.line}`, background: dateBg, color: dateColor, fontFamily: 'inherit', outline: 'none', fontWeight: isOverdue || isToday ? 700 : 400 }}
+                                    value={draft.followup_date}
+                                    onChange={e => setActionDraft(d.id, 'followup_date', e.target.value)}
+                                    onBlur={e => saveActionField(d.id, 'followup_date', e.target.value)}
+                                  />
+                                  {isOverdue && <span style={{ fontSize: 10, fontWeight: 700, color: C.red, background: '#FEF0EE', borderRadius: 4, padding: '2px 6px' }}>Overdue</span>}
+                                  {isToday && <span style={{ fontSize: 10, fontWeight: 700, color: C.orange, background: C.orangeSoft, borderRadius: 4, padding: '2px 6px' }}>Today</span>}
+                                </div>
+                              </div>
+                              {/* Waiting On */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.06em', width: 80, flexShrink: 0 }}>Waiting On</span>
+                                <select
+                                  style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: `1px solid ${C.line}`, background: '#fff', color: draft.waiting_on ? C.ink : C.sub, fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                  value={draft.waiting_on}
+                                  onChange={e => { setActionDraft(d.id, 'waiting_on', e.target.value); saveActionField(d.id, 'waiting_on', e.target.value) }}
+                                >
+                                  <option value="">—</option>
+                                  <option value="buyer">Buyer</option>
+                                  <option value="supplier">Supplier</option>
+                                  <option value="internal">Internal</option>
+                                </select>
+                              </div>
+                            </div>
+                          )
+                        })()}
+
+                        {/* Notes toggle */}
+                        <div style={{ marginTop: 10 }}>
                           <MiniBtn color={C.sub} ghost onClick={() => { setExpandedId(isOpen ? null : d.id); setNoteDraft('') }}>
                             {isOpen ? 'Hide notes' : `Notes (${d.deal_notes.length})`}
                           </MiniBtn>
@@ -1173,8 +1247,8 @@ export default function BoardPage() {
                               <MiniBtn color={C.orange} onClick={() => addNote(d.id)}>Add</MiniBtn>
                             </div>
                             {/* Notes list */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
-                              {d.deal_notes.map(n => (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {(expandedNotesIds.has(d.id) ? d.deal_notes : d.deal_notes.slice(0, 2)).map(n => (
                                 <div key={n.id} style={{ background: C.cream, borderRadius: 8, padding: '8px 10px', border: `1px solid ${C.line}` }}>
                                   <div style={{ fontSize: 11, color: C.sub, marginBottom: 3 }}>
                                     <strong style={{ color: C.ink }}>{n.author_name}</strong> · {fmtStamp(n.created_at)}
@@ -1205,6 +1279,14 @@ export default function BoardPage() {
                                 </div>
                               ))}
                             </div>
+                            {d.deal_notes.length > 2 && (
+                              <button
+                                onClick={() => setExpandedNotesIds(prev => { const s = new Set(prev); s.has(d.id) ? s.delete(d.id) : s.add(d.id); return s })}
+                                style={{ background: 'none', border: 'none', color: C.sub, fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '4px 0 0', fontFamily: 'inherit' }}
+                              >
+                                {expandedNotesIds.has(d.id) ? '↑ Show less' : `View all ${d.deal_notes.length} notes`}
+                              </button>
+                            )}
                             {/* Links section */}
                             <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Links</div>
