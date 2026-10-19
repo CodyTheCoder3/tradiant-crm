@@ -25,10 +25,11 @@ const STAGES = [
 
 const BUYER_STAGES = [
   { id: 'interested', label: 'Interested', color: '#7A6E5E' },
-  { id: 'po',         label: 'PO',         color: '#E8590C' },
   { id: 'invoice',    label: 'Invoice',    color: '#7B5EA7' },
+  { id: 'prepaid',    label: 'Prepaid',    color: '#C07A1A' },
   { id: 'shipping',   label: 'Shipping',   color: '#2563EB' },
   { id: 'delivered',  label: 'Delivered',  color: '#2E7D4F' },
+  { id: 'paid',       label: 'Paid',       color: '#2E7D4F' },
 ]
 
 // ── Types ─────────────────────────────────────────────────────
